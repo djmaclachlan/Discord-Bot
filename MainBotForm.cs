@@ -8,11 +8,14 @@ using System.Drawing;
 using System.Data.SQLite;
 using System.Data;
 using System.Data.OleDb;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DiscordBotApplication
 {
     public partial class MainBotForm : Form
     {
+        public string guild, channel;
         DiscordSocketClient Client;
         CommandHandler Handler;
         public MainBotForm()
@@ -20,16 +23,21 @@ namespace DiscordBotApplication
             InitializeComponent();
             tabControl1.DrawItem += new DrawItemEventHandler(tabControl1_DrawItem);
         }
-        
 
+        private async void SendMessage(string a) // Used for all custom messages sent
+        {
+            var channel1 = Client.GetChannel(Convert.ToUInt64(txtChannelID.Text)) as SocketTextChannel;
+            await channel1.SendMessageAsync(a);
+        }
         private async void button1_Click(object sender, EventArgs e)
         {
+            guild = tbToken.Text;
             Handler = new CommandHandler();
             Client = new DiscordSocketClient(new DiscordSocketConfig()
             {
                 LogLevel = LogSeverity.Verbose,
                 WebSocketProvider = Discord.Net.Providers.WS4Net.WS4NetProvider.Instance
-            }) ;
+            });
 
             await Handler.Install(Client);
             Client.Log += Client_Log;
@@ -40,11 +48,12 @@ namespace DiscordBotApplication
             }
             catch (Exception ex)
             {
+                MessageBox.Show("There was an error connecting to that token, please verify and try again.");
                 Console.WriteLine(ex);
                 return;
             }
-            await Task.Delay(-1);
-            
+
+
         }
         private Task Client_Log(LogMessage arg)
         {
@@ -62,8 +71,8 @@ namespace DiscordBotApplication
             {
                 tbOutput.AppendText("The Bot Has Rolled A [" + output + "]\n");
             });
-            var channel = Client.GetChannel("Insert-Channel-ID-Here") as SocketTextChannel;
-            await channel.SendMessageAsync("The GM has rolled a " + sides + " sided die and the result is [" + output + "]");
+            var channel1 = Client.GetChannel(Convert.ToUInt64(txtChannelID.Text)) as SocketTextChannel;
+            await channel1.SendMessageAsync("The GM has rolled a " + sides + " sided die and the result is [" + output + "]");
         }
         private void PrivateRoll(int sides)
         {
@@ -79,7 +88,7 @@ namespace DiscordBotApplication
         {
             try
             {
-              PrivateRoll(Convert.ToInt32(tbSideCount.Text));
+                PrivateRoll(Convert.ToInt32(tbSideCount.Text));
             }
             catch (Exception ex)
             {
@@ -132,11 +141,8 @@ namespace DiscordBotApplication
             _stringFlags.LineAlignment = StringAlignment.Center;
             g.DrawString(_tabPage.Text, _tabFont, _textBrush, _tabBounds, new StringFormat(_stringFlags));
         }
-
-        private void MainBotForm_Load(object sender, EventArgs e)
+        private void GetPlayers()
         {
-            dataGridView2.AutoGenerateColumns = true;
-            dataGridView2.AutoGenerateColumns = true;
             string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
             using (OleDbConnection conn = new OleDbConnection(connectionString))
             {
@@ -153,6 +159,11 @@ namespace DiscordBotApplication
                 conn.Close();
 
             }
+        }
+        private void GetNPCS()
+        {
+            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
+
             using (OleDbConnection conn = new OleDbConnection(connectionString))
             {
                 conn.Open();
@@ -168,71 +179,26 @@ namespace DiscordBotApplication
                 conn.Close();
             }
         }
+        private void MainBotForm_Load(object sender, EventArgs e)
+        {
+            // TODO: This line of code loads data into the 'universalDataSet.channels' table. You can move, or remove it, as needed.
+            dataGridView2.AutoGenerateColumns = true;
+            dataGridView1.AutoGenerateColumns = true;
+            GetNPCS();
+            GetPlayers();
+        }
 
         private void btnAddPlayer_Click(object sender, EventArgs e)
         {
             AddPlayer frm1 = new AddPlayer();
             frm1.Show();
         }
-
-        private void dataGridView2_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-
-        }
-
         private void button4_Click(object sender, EventArgs e)
         {
+            GetNPCS();
+            GetPlayers();
         }
 
-        private void button5_Click(object sender, EventArgs e)
-        {
-            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
-            try
-            {//Principal Due
-                using (OleDbConnection conn = new OleDbConnection(connectionString))
-                {
-                    try
-                    {
-                        OleDbCommand cmd = new OleDbCommand();
-                        cmd.CommandType = CommandType.Text;
-                        cmd.CommandText = "Update Players set intMax = intMax+1";
-                        Console.WriteLine(Convert.ToString(cmd.CommandText));
-                        cmd.Connection = conn;
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
-                        conn.Close();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-        }
-
-        private void bindingSource1_CurrentChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button8_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button11_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button14_Click(object sender, EventArgs e)
-        {
-
-        }
 
         private void dataGridView1_CellClick_1(object sender, DataGridViewCellEventArgs e)
         {
@@ -278,6 +244,249 @@ namespace DiscordBotApplication
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        private void a(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnIncInt_Click(object sender, EventArgs e)
+        {
+            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
+            try
+            {
+                using (OleDbConnection conn = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+                        OleDbCommand cmd = new OleDbCommand();
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = "update players set intMax = intMax+1 where ID =" + dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                        Console.WriteLine(Convert.ToString(cmd.CommandText));
+                        cmd.Connection = conn;
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        conn.Close();
+                        SendMessage("Player Character " + dataGridView1.CurrentRow.Cells[1].Value.ToString() + " has had his/her maximum intelligence increased by 1!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        private void btnDecInt_Click(object sender, EventArgs e)
+        {
+            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
+            try
+            {
+                using (OleDbConnection conn = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+                        OleDbCommand cmd = new OleDbCommand();
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = "update players set intMax = intMax-1 where ID =" + dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                        Console.WriteLine(Convert.ToString(cmd.CommandText));
+                        cmd.Connection = conn;
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        conn.Close();
+                        SendMessage("Player Character " + dataGridView1.CurrentRow.Cells[1].Value.ToString() + " has had his/her maximum intelligence decreased by 1!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        private void btnIncMightMax_Click(object sender, EventArgs e)
+        {
+            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
+            try
+            {
+                using (OleDbConnection conn = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+                        OleDbCommand cmd = new OleDbCommand();
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = "update players set mightMax = mightMax+1 where ID =" + dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                        Console.WriteLine(Convert.ToString(cmd.CommandText));
+                        cmd.Connection = conn;
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        conn.Close();
+                        SendMessage("Player Character " + dataGridView1.CurrentRow.Cells[1].Value.ToString() + " has had his/her maximum might increased by 1!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+
+        private void btnDecMightMax_Click(object sender, EventArgs e)
+        {
+            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
+            try
+            {
+                using (OleDbConnection conn = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+                        OleDbCommand cmd = new OleDbCommand();
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = "update players set mightMax = mightMax-1 where ID =" + dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                        Console.WriteLine(Convert.ToString(cmd.CommandText));
+                        cmd.Connection = conn;
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        conn.Close();
+                        SendMessage("Player Character " + dataGridView1.CurrentRow.Cells[1].Value.ToString() + " has had his/her maximum might decreased by 1!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        private void btnIncAgility_Click(object sender, EventArgs e)
+        {
+            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
+            try
+            {
+                using (OleDbConnection conn = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+                        OleDbCommand cmd = new OleDbCommand();
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = "update players set agilityMax = agilityMax+1 where ID =" + dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                        Console.WriteLine(Convert.ToString(cmd.CommandText));
+                        cmd.Connection = conn;
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        conn.Close();
+                        SendMessage("Player Character " + dataGridView1.CurrentRow.Cells[1].Value.ToString() + " has had his/her maximum agility increased by 1!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        private void btnDecAgilityMax_Click(object sender, EventArgs e)
+        {
+            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
+            try
+            {
+                using (OleDbConnection conn = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+                        OleDbCommand cmd = new OleDbCommand();
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = "update players set agilityMax = agilityMax-1 where ID =" + dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                        Console.WriteLine(Convert.ToString(cmd.CommandText));
+                        cmd.Connection = conn;
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        conn.Close();
+                        SendMessage("Player Character " + dataGridView1.CurrentRow.Cells[1].Value.ToString() + " has had his/her maximum agility decreased by 1!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        private void button4_Click_1(object sender, EventArgs e)
+        {
+            string cypherName = "", cypherDesc = "";
+            Random random = new Random();
+            int numberOfCyphers = 0;
+            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\dmaclachlan\source\repos\DiscordBotApplication\discordNetBotDB.accdb";
+
+            using (OleDbConnection conn = new OleDbConnection(connectionString))
+            {
+                conn.Open();
+                String strSQL = "select count(*) as [Number of Cyphers] from Cyphers";
+                using (OleDbDataAdapter da = new OleDbDataAdapter(new OleDbCommand(strSQL, conn)))
+                {
+                    using (DataTable dtRecord = new DataTable())
+                    {
+                        da.Fill(dtRecord);
+                        foreach (DataRow dr in dtRecord.Rows)
+                        {
+                            numberOfCyphers = Convert.ToInt32(dr["Number of Cyphers"]);
+                        }
+                    }
+                }
+                conn.Close();
+            }
+            int output = random.Next(1, numberOfCyphers);
+            using (OleDbConnection conn = new OleDbConnection(connectionString))
+            {
+                conn.Open();
+                String strSQL = "select cypherName, cypherDescription from Cyphers where cypherID = " + output;
+                using (OleDbDataAdapter da = new OleDbDataAdapter(new OleDbCommand(strSQL, conn)))
+                {
+                    using (DataTable dtRecord = new DataTable())
+                    {
+                        da.Fill(dtRecord);
+                        foreach (DataRow dr in dtRecord.Rows)
+                        {
+                            cypherName = Convert.ToString(dr["cypherName"]);
+                            cypherDesc = Convert.ToString(dr["cypherDescription"]);
+                        }
+                    }
+                }
+                conn.Close();
+            }
+            SendMessage(dataGridView1.CurrentRow.Cells[1].Value.ToString() + " has been awarded the folllowing cypher.\nCypher Name: " + cypherName + "\nCypher Description: " + cypherDesc);
+        }
+
+        private void btnChannelMessage_Click(object sender, EventArgs e)
+        {
+            SendMessage(txtMessage.Text);
         }
     }
 }
